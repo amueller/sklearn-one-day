@@ -7,7 +7,7 @@ with the "Introduction to Machine Learning with scikit-learn" course.
 
 Content
 -------
-- [What is machine learning and what can it do for you?](https://amueller.github.io/sklearn-one-day/slides/01-introduction.html)
+- [Review of basic Machine Learning concepts](https://amueller.github.io/sklearn-one-day/slides/01-introduction.html)
 - [Data loading and basic API of scikit-learn](https://amueller.github.io/sklearn-one-day/slides/02-supervised-learning.html)
 - [Fundamentals of Data Preprocessing: scaling and categorical data](https://amueller.github.io/sklearn-one-day/slides/03-preprocessing.html)
 - [Grid search and cross-validation](https://amueller.github.io/sklearn-one-day/slides/04-cross-validation-grid-search.html)

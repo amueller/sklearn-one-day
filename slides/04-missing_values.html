@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Missing Values</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="style.css">
+    <style>
+      @import url(https://fonts.googleapis.com/css?family=Garamond);
+      @import url(https://fonts.googleapis.com/css?family=Muli:400,700,400italic);
+      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+![:scale 40%](images/sklearn_logo.png)
+
+### Introduction to Machine learning with scikit-learn
+
+# Missing values
+
+Andreas C. Müller
+
+Microsoft, scikit-learn
+
+.smaller[https://github.com/amueller/sklearn-oneday]
+
+---
+class: spacious
+
+# Dealing with missing values
+
+- Missing values can be encoded in many ways
+- Numpy has no standard format for it (often np.NaN) - pandas does
+- Sometimes: 999, ???, ?, np.inf, “N/A”, “Unknown“ …
+- Not discussing “missing output” - that’s semi-supervised learning.
+- Often missingness is informative (Use `MissingIndicator`)
+
+???
+
+So first we're going to talk about imputation, which means
+basically dealing with missing values. Before that, we're
+going to talk about different methods to deal with missing
+values. The first thing about missing values is that you
+need to figure out whether your dataset has them and how
+they encode it. If you're on Python, numpy has no standard
+way to represent missing values while Pandas does and it's
+usually nan. But the problem is usually more in the data
+source. So depending on where your data comes from, missing
+values might be encoded as anything. They might be
+differently encoded for different parts of the data set. So
+if you see some question marks somewhere, it doesn't mean
+that all missing values are encoded as question marks. There
+might be different reasons why data is missing. If you look
+into like theoretical analysis missingness, often there you
+can see something that's called missing at random or missing
+completely at random, meaning that data was retracted
+randomly from the dataset. That's not usually what happens.
+Usually, if the data is missing, it's missing because
+something when differently in a process, like someone didn't
+fill out the form correctly, or someone didn't reply in a
+survey. And very often the fact that someone didn't reply or
+that something was not measured is actually informative.
+Whenever you have missing values, it's often a good idea to
+keep the information about whether the value was missing or
+not. If a feature was missing, while we're going to do
+imputation and we're going to try to fill in the missing
+values. It's often really useful information that's
+something was missing and you should record the fact and
+represent it in the dataset somehow. We're only going to
+talk about missing input today. You can also have missing
+values in the outputs that are usually called
+semi-supervised learning where you have the true target or
+the true class only for some data points, but not for all of
+them. So there's the first method which is very obvious.
+Let's say your data looks like this. All my illustrations
+today we'll be adding randomness to the iris data set.
+
+FIXME: Better digram for feature selection. What are the
+hypothesises for the tests
+---
+
+.center[
+![:scale 80%](images/row_nan_col_nan.png)
+]
+
+???
+So if my dataset looks like something on the left-hand side
+here, then you can see that there are only missing values in
+the first feature and it's mostly missing. One of the ways
+to deal with this is just completely dropped the first
+feature, and that might be a reasonable thing to do. If
+there are so few values here that you don't think there's
+any information in this just drop it I always like to
+compare everything to a baseline approach. So your baseline
+approach should be if there's only missing values in some of
+the columns, just drop these columns, see what happens. You
+can always iterate and improve on that but that should be
+the baseline. A little bit trickier situation is that there
+might be some missing values only for a few rows, the rows
+are data points. You can kick out these data points and
+train the model on the rest and that might be fine. There's
+a bit of a problem with this though, that if you want to
+make predictions on new data and the data that arrives has
+missing values you'll not be able to make predictions
+because you don't have a way to deal with missing values. If
+you're guaranteed that any new test point that comes in will
+not have missing values then doing this might make sense.
+Another issue with dropping the rows with missing values is
+that if this was related to the actual outcome then it might
+be that you biased how well you think you're doing. Maybe
+all the hard data points are the ones that have missing
+values. And so by excluding them from your training data,
+you're also excluding them from the validation. So it means
+you think you're doing very well because you discarded all
+the hard data points. Discarding data points is a little bit
+trickier and it depends on your situation.
+
+
+---
+
+.center[
+![:scale 100%](images/imputation-schema.png)
+]
+
+???
+The other solution is to impute them. So the idea is that
+you have your training data set, you build some model of the
+training data set, and then you fill in the missing values
+using the information from the other rows and columns. And
+you built a model for this and then you can also apply the
+same imputation model on the test data set if you want to
+make predictions. Question is what if it has all missing
+values? Then you have no choice but drop that. If in the
+dataset that happens, you need to figure out what you are
+going to do. Like, if you have a production system, and
+something comes in with all missing values, you need to
+decide what you're going to do. But you probably cannot use
+this data point for training model. You could like use the
+outputs and train to find the mean outcome of all the values
+that are missing.
+
+---
+class: spacious
+
+# Imputation Methods
+
+- Mean / Median
+- kNN
+- Regression models
+- Matrix factorization (not in this lecture)
+
+???
+So let's talk about the general methods for data imputation.
+So these are the ones that we are going to talk through. The
+easiest one is me doing a constant value per column.
+Imputing the mean or the medium of the column that we're
+trying to compute. kNN means taking the average of KNearest
+Neighbors. Regression means I build a regression model from
+some of the features trying to rip the missing future. And
+finally, elaborate probabilistic models. They try to build a
+probabilistic model of the dataset and complete the missing
+values based on this probabilistic model
+
+---
+
+# Baseline: Dropping Columns
+
+.smaller[
+```python
+
+from sklearn.linear_model import LogisticRegressionCV
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X_, y, stratify=y)
+
+nan_columns = np.any(np.isnan(X_train), axis=0)
+X_drop_columns = X_train[:, ~nan_columns]
+lr = LogisticRegression().fit(X_drop_columns, y_train)
+lr.score(X_test[:, ~nan_columns], y_test)
+```
+0.772
+]
+
+???
+Here’s my baseline, which is dropping the columns. I used
+iris dataset where I had to put some missing values into the
+second and third column. Here, x_score has like some missing
+values, I split into test and training test data set and
+then I drop all columns that have missing values and then I
+can train logistic regression, which is sort of the model
+I'm going to use to tell me how well does this imputation
+work for classification. For my baseline, using a logistic
+regression model and 10 fold baseline, I get 77.2% accuracy.
+
+---
+
+# Mean and Median
+
+.center[
+![:scale 100%](images/imputation-median-schema.png)
+]
+
+???
+The simplest imputation is mean or medium. Unfortunately,
+only one is implemented in scikit-learn right now. If this
+is our dataset, the imputation will look like this. For a
+column, each missing value is replaced by the mean of the
+column. The imputer is the only transformer in scikit-learn
+that can handle missing data. Using the imputer you can
+specify the strategy, mean or median or constant and then
+you can call the method transform and that imputes missing
+values.
+
+---
+
+.center[
+![:scale 90%](images/median_imputation.png)
+]
+
+???
+Here is a graphical illustration of what does this. So the
+iris dataset is four-dimensional, and I'm plotting it in two
+dimensions in which I added missing values. So, there are
+two other dimensions which had no missing values, which you
+can't see. The original data set is basically blue points
+here, orange points here, green points here, and it's
+relatively easy to separate. But here you can see that the
+green points they have a lot of missingness, so they were
+replaced by the mean of the whole dataset.
+
+So there are two things about this. One, I kind of lost the
+class information a lot. Two, the data is now in places
+where there was no data before, which is not so great. You
+could do smart things like doing the mean per class, but
+that's actually not something that I've seen a lot.
+
+
+---
+
+
+
+```python
+nan_columns = np.any(np.isnan(X_train), axis = 0)
+X_drop_columns = X_train[:,~nan_columns]
+logreg = LogisticRegression()
+logreg.fit(X_drop_columns, y_train)
+logreg.score(X_test[:,~nan_columns], y_test)
+```
+0.794
+```python
+imp = SimpleImputer()
+X_train_imp = imp.fit_transform(X_train)
+lr = LogisticRegression().fit(X_train_imp, y_train)
+X_test_imp = imp.transform(X_test)
+lr.score(X_test_imp, y_test)
+```
+0.729
+
+???
+
+Here's the comparison of dropping the columns versus doing
+the mean amputation. We actually see that the mean
+imputation is worse. In general, if you have very few
+missing values, it might actually not be so bad and putting
+in the mean might work.
+Here I basically designed the dataset so that mean imputation fails.
+This is not very realistic.
+
+---
+class: spacious
+
+# KNN Imputation
+
+- Find k nearest neighbors that have non-missing values.
+- Fill in all missing values using the average of the
+neighbors.
+
+.smaller[
+```python
+from sklearn.impute import KNNImputer
+knnimp = KNNImputer().fit(X_train)
+X_train_knn = knnimp.transform(X_train)
+lr = LogisticRegression().fit(X_train_knn, y_train)
+X_test_knn = knnimp.transform(X_test)
+lr.score(X_test_knn, y_test)
+```
+```
+0.849
+```
+]
+---
+.center[
+![:scale 80%](images/knn_imputation.png)
+]
+
+???
+
+---
+
+# Model-Driven Imputation
+
+- Train regression model for missing values
+- Iterate: retrain after filling in
+- IterativeImputer in next sklearn release
+
+.smaller[
+```python
+rf_imp = IterativeImputer(predictor=RandomForestRegressor())
+rf_imp.fit(X_train)
+X_train_rf = rf_imp.transform(X_train)
+lr = LogisticRegression().fit(X_train_rf, y_train)
+X_test_rf = rf_imp.transform(X_test)
+lr.score(X_test_rf, y_test)
+```
+```
+0.845
+```
+]
+
+???
+The next step up in complexity is using an arbitrary
+regression model for imputation. I mean, arguably, the kNN
+is also a regression model, but there's like some
+intricacies that make it a little bit different. So the idea
+with using a regression model is you do the first pass and
+impute data using the mean. And then you try to predict the
+missing features using a regression model trained on the
+non-missing features and then you iterate this until stuff
+doesn't change anymore. You can use any model you like, and
+this is very flexible, and it can be fast if you have a fast
+model.
+---
+class: spacious
+
+# Comparision of Imputation Methods
+
+.center[
+![:scale 100%](images/med_knn_rf_comparison.png)
+]
+
+???
+FIXME better illustration/ graph
+Here's a comparison on the iris dataset again.
+This is a very artificial example and is only meant to illustrate the ideas.
+In practice, using the mean or median is actually quite decent.
+
+
+    </textarea>
+    <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+    <script>
+    // Config Remark
+    remark.macros['scale'] = function (percentage) {
+        var url = this;
+        return '<img src="' + url + '" style="width: ' + percentage + '" />';
+    };
+    config_remark = {
+        highlightStyle: 'magula',
+        highlightSpans: true,
+        highlightLines: true,
+        ratio: "16:9"
+    };
+      var slideshow = remark.create(config_remark);
+    // Configure MathJax
+    MathJax.Hub.Config({
+    tex2jax: {
+        inlineMath: [['$','$'], ['\\(','\\)']],
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'] /* removed 'code' entry*/
+    }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for(i = 0; i < all.length; i += 1) {
+            all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+    </script>
+  </body>
+</html>

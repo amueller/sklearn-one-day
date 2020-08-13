@@ -13,6 +13,8 @@ Content
 - [Grid search and cross-validation](https://amueller.github.io/sklearn-one-day/slides/04-cross-validation-grid-search.html)
 - [Building workflows with Pipelines](https://amueller.github.io/sklearn-one-day/slides/05-pipelines.html)
 - [Evaluation metrics for classification](https://amueller.github.io/sklearn-one-day/slides/06-model-evaluation.html)
+- [if time permits: Trees and Random Forests](https://amueller.github.io/sklearn-one-day/slides/bonus-07-trees-and-forests.html)
+- [if time permits: Gradient Boosting in-depth](https://amueller.github.io/sklearn-one-day/slides/bonus-08-gradient-boosting.html)
 
 About the workshop
 ------------------
